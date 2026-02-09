@@ -2,7 +2,6 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 
 export const runtime = "nodejs";
 
-// Convert Unicode stuff that Helvetica WinAnsi can't encode into safe text
 function sanitizePdfText(input: string) {
   if (!input) return "";
 
@@ -35,6 +34,7 @@ function wrapLine(text: string, maxChars: number) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
     const title = sanitizePdfText(String(body.title ?? "OCR Document"));
     const docType = sanitizePdfText(String(body.docType ?? "Other"));
     const meanConfidence = Number(body.meanConfidence ?? 0);
@@ -75,31 +75,30 @@ export async function POST(req: Request) {
     // Header
     drawLine(title, true, 16);
     y -= 6;
-    drawLine(
-      `Document Type: ${docType}  |  Confidence: ${meanConfidence}%`,
-      true,
-      11
-    );
+    drawLine(`Document Type: ${docType}  |  Confidence: ${meanConfidence}%`, true, 11);
     y -= 10;
 
     for (const s of sections) {
-      const heading = sanitizePdfText(String(s.heading ?? "Section"));
-      drawLine(heading, true, 13);
+      drawLine(String(s.heading ?? "Section"), true, 13);
 
       const content = sanitizePdfText(String(s.content ?? ""));
       const lines = content.split("\n").map((l) => l.trim()).filter(Boolean);
 
       for (const line of lines) {
-        const wrapped = wrapLine(line, 95);
-        for (const w of wrapped) drawLine(w, false, 11);
+        for (const w of wrapLine(line, 95)) {
+          drawLine(w, false, 11);
+        }
       }
       y -= 8;
     }
 
-    const bytes = await pdfDoc.save(); // Uint8Array
+    // pdf-lib returns Uint8Array (TS may treat it as Uint8Array<ArrayBufferLike>)
+    const bytes = await pdfDoc.save();
 
-    // ✅ Return native Response for binary (fix TS on Vercel)
-    return new Response(bytes, {
+    // ✅ Convert to exact ArrayBuffer slice (BodyInit-safe)
+    const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+
+    return new Response(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
