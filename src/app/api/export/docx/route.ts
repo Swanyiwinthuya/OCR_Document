@@ -23,7 +23,10 @@ export async function POST(req: Request) {
     children.push(
       new Paragraph({
         children: [
-          new TextRun({ text: `Document Type: ${docType}  |  Confidence: ${meanConfidence}%`, bold: true }),
+          new TextRun({
+            text: `Document Type: ${docType}  |  Confidence: ${meanConfidence}%`,
+            bold: true,
+          }),
         ],
       })
     );
@@ -47,9 +50,12 @@ export async function POST(req: Request) {
     }
 
     const doc = new Document({ sections: [{ children }] });
-    const buffer = await Packer.toBuffer(doc);
 
-    return new NextResponse(buffer, {
+    // Buffer (Node) -> Uint8Array (Web BodyInit compatible)
+    const buffer = await Packer.toBuffer(doc);
+    const bytes = new Uint8Array(buffer);
+
+    return new NextResponse(bytes, {
       status: 200,
       headers: {
         "Content-Type":
