@@ -4,14 +4,13 @@ export const runtime = "nodejs";
 
 function sanitizePdfText(input: string) {
   if (!input) return "";
-
   return input
     .normalize("NFKC")
-    .replace(/\uFB00/g, "ff")  // ﬀ
-    .replace(/\uFB01/g, "fi")  // ﬁ
-    .replace(/\uFB02/g, "fl")  // ﬂ
-    .replace(/\uFB03/g, "ffi") // ﬃ
-    .replace(/\uFB04/g, "ffl") // ﬄ
+    .replace(/\uFB00/g, "ff")
+    .replace(/\uFB01/g, "fi")
+    .replace(/\uFB02/g, "fl")
+    .replace(/\uFB03/g, "ffi")
+    .replace(/\uFB04/g, "ffl")
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2013\u2014]/g, "-")
@@ -44,7 +43,6 @@ export async function POST(req: Request) {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Pagination
     const pageSize: [number, number] = [595.28, 841.89]; // A4
     let page = pdfDoc.addPage(pageSize);
 
@@ -63,6 +61,7 @@ export async function POST(req: Request) {
       const safe = sanitizePdfText(txt);
       if (!safe) return;
       if (y < bottom) newPage();
+
       page.drawText(safe, {
         x: left,
         y,
@@ -92,13 +91,14 @@ export async function POST(req: Request) {
       y -= 8;
     }
 
-    // pdf-lib returns Uint8Array (TS may treat it as Uint8Array<ArrayBufferLike>)
+    // pdf-lib returns Uint8Array
     const bytes = await pdfDoc.save();
 
-    // ✅ Convert to exact ArrayBuffer slice (BodyInit-safe)
-    const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    // ✅ Make a *real* ArrayBuffer copy (NOT ArrayBufferLike / SharedArrayBuffer)
+    const ab = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(ab).set(bytes);
 
-    return new Response(arrayBuffer, {
+    return new Response(ab, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
