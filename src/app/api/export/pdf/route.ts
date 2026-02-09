@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 
 export const runtime = "nodejs";
@@ -8,27 +7,17 @@ function sanitizePdfText(input: string) {
   if (!input) return "";
 
   return input
-    // Normalize ligatures and compatibility chars
     .normalize("NFKC")
-
-    // Common ligatures from OCR
     .replace(/\uFB00/g, "ff")  // ﬀ
     .replace(/\uFB01/g, "fi")  // ﬁ
-    .replace(/\uFB02/g, "fl")  // ﬂ  <-- your error
+    .replace(/\uFB02/g, "fl")  // ﬂ
     .replace(/\uFB03/g, "ffi") // ﬃ
     .replace(/\uFB04/g, "ffl") // ﬄ
-
-    // Smart quotes / dashes
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2013\u2014]/g, "-")
-
-    // Bullets / NBSP
     .replace(/\u2022/g, "-")
     .replace(/\u00A0/g, " ")
-
-    // Remove remaining characters that are likely not WinAnsi-friendly
-    // (keep basic Latin + Latin-1 supplement)
     .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
 }
 
@@ -55,7 +44,7 @@ export async function POST(req: Request) {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Simple pagination
+    // Pagination
     const pageSize: [number, number] = [595.28, 841.89]; // A4
     let page = pdfDoc.addPage(pageSize);
 
@@ -73,7 +62,6 @@ export async function POST(req: Request) {
     const drawLine = (txt: string, isBold = false, size = 12) => {
       const safe = sanitizePdfText(txt);
       if (!safe) return;
-
       if (y < bottom) newPage();
       page.drawText(safe, {
         x: left,
@@ -87,7 +75,11 @@ export async function POST(req: Request) {
     // Header
     drawLine(title, true, 16);
     y -= 6;
-    drawLine(`Document Type: ${docType}  |  Confidence: ${meanConfidence}%`, true, 11);
+    drawLine(
+      `Document Type: ${docType}  |  Confidence: ${meanConfidence}%`,
+      true,
+      11
+    );
     y -= 10;
 
     for (const s of sections) {
@@ -104,9 +96,10 @@ export async function POST(req: Request) {
       y -= 8;
     }
 
-    const bytes = await pdfDoc.save();
+    const bytes = await pdfDoc.save(); // Uint8Array
 
-    return new NextResponse(bytes, {
+    // ✅ Return native Response for binary (fix TS on Vercel)
+    return new Response(bytes, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
@@ -114,6 +107,6 @@ export async function POST(req: Request) {
       },
     });
   } catch (e: any) {
-    return new NextResponse(e?.message || "PDF export failed", { status: 500 });
+    return new Response(e?.message || "PDF export failed", { status: 500 });
   }
 }

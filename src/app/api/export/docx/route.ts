@@ -55,15 +55,13 @@ export async function POST(req: Request) {
     const buffer = await Packer.toBuffer(doc);
     const bytes = new Uint8Array(buffer);
 
-    return new NextResponse(bytes, {
-      status: 200,
-      headers: {
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="ocr.docx"`,
-      },
-    });
-  } catch (e: any) {
-    return new NextResponse(e?.message || "DOCX export failed", { status: 500 });
-  }
+  return new Response(bytes, {
+  status: 200,
+  headers: {
+    "Content-Type":
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "Content-Disposition": `attachment; filename="ocr.docx"`,
+  },
+});
+
 }
