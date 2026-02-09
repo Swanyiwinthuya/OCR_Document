@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OCR Document Categorizer (Pro)
 
-## Getting Started
+A full-stack OCR web app that takes a wide-angle photo of a document, automatically crops the document area, performs OCR to extract editable text, categorizes the content into headings, classifies document type (Receipt / Invoice / Contract / ID), highlights low-confidence OCR words, and saves searchable history to the cloud (Supabase). Includes PDF/DOCX export.
 
-First, run the development server:
+## Demo
+- Live: https://YOUR_VERCEL_URL.vercel.app  
+- Repo: https://github.com/Swanyiwinthuya/OCR_Document
 
+## Features
+✅ **Wide-angle Document Auto-Crop** (OpenCV.js)  
+- Detects the largest document contour and applies perspective transform (warp) to isolate the document even when other objects are in the photo.
+- Manual crop fallback (react-easy-crop) if auto detection fails.
+
+✅ **OCR with Word Confidence** (Tesseract.js)  
+- Extracts text + word-level confidence.
+- Highlights low-confidence words to help verify accuracy.
+
+✅ **Document Type Classifier**
+- Classifies as: **Receipt / Invoice / Contract / ID / Other** (keyword + pattern scoring).
+
+✅ **Content Categorization**
+- Converts extracted text into structured **headings + sections** for easier reading.
+
+✅ **Export**
+- **PDF Export** (server-side API route)
+- **DOCX Export** (server-side API route)
+- Uses text normalization to avoid PDF encoding issues.
+
+✅ **Cloud Storage + Search** (Supabase)
+- Save OCR results to Supabase (title, raw text, sections, document type, OCR confidence).
+- Search cloud docs by **keyword** and **date range**.
+
+## Tech Stack
+- **Next.js (App Router) + TypeScript**
+- **OpenCV.js** (document detection + perspective crop)
+- **Tesseract.js** (OCR)
+- **Supabase** (database storage)
+- **pdf-lib** (PDF generation)
+- **docx** (DOCX generation)
+- **react-easy-crop** (manual crop)
+
+---
+
+## Getting Started (Local Setup)
+
+### 1) Clone & install
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+git clone https://github.com/Swanyiwinthuya/OCR_Document.git
+cd OCR_Document
+npm install
